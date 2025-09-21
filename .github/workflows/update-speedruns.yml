@@ -1,0 +1,39 @@
+name: Update Speedrun Leaderboards
+
+# Run every 6 hours
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  update-speedruns:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        cd scripts
+        pip install -r requirements.txt
+        
+    - name: Update speedrun data
+      env:
+        WIKI_API_URL: ${{ secrets.WIKI_API_URL }}
+        WIKI_USERNAME: ${{ secrets.WIKI_USERNAME }}
+        WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
+        GAME_ID: ${{ secrets.GAME_ID }}
+        CATEGORY_ID: ${{ secrets.CATEGORY_ID }}
+        WIKI_PAGE_TITLE: ${{ secrets.WIKI_PAGE_TITLE }}
+      run: |
+        cd scripts
+        python update_speedruns.py
