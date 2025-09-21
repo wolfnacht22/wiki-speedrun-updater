@@ -3,16 +3,14 @@ import os
 import sys
 from datetime import datetime
 
-# Configuration - set these as GitHub repository secrets
 WIKI_API_URL = os.environ.get('WIKI_API_URL', 'https://your-wiki.wiki.gg/api.php')
 WIKI_USERNAME = os.environ.get('WIKI_USERNAME')
 WIKI_PASSWORD = os.environ.get('WIKI_PASSWORD')
-GAME_ID = os.environ.get('GAME_ID')  # From speedrun.com
-CATEGORY_ID = os.environ.get('CATEGORY_ID')  # From speedrun.com
+GAME_ID = os.environ.get('GAME_ID')
+CATEGORY_ID = os.environ.get('CATEGORY_ID')
 WIKI_PAGE_TITLE = os.environ.get('WIKI_PAGE_TITLE', 'Speedrun_Leaderboards')
 
 def get_speedrun_data():
-    """Fetch leaderboard data from speedrun.com API"""
     url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{CATEGORY_ID}"
     
     try:
@@ -24,15 +22,15 @@ def get_speedrun_data():
         return None
 
 def format_leaderboard_wikitext(data):
-    """Convert speedrun data to MediaWiki table format"""
     if not data or 'data' not in data:
         return "{{notice|Error loading speedrun data}}"
     
     runs = data['data']['runs']
-    players = data['data']['players']['data']
     
-    # Create player lookup
-    player_lookup = {player['id']: player['names']['international'] for player in players}
+    player_lookup = {}
+    if 'players' in data['data'] and 'data' in data['data']['players']:
+        players = data['data']['players']['data']
+        player_lookup = {player['id']: player['names']['international'] for player in players}
     
     wikitext = """{{DISPLAYTITLE:Speedrun Leaderboards}}
 == Current Leaderboards ==
@@ -43,20 +41,29 @@ def format_leaderboard_wikitext(data):
 |-
 """
     
-    for i, run in enumerate(runs[:10]):  # Top 10 runs
+    for i, run in enumerate(runs[:10]):
         rank = i + 1
-        player_id = run['run']['players'][0]['id']
-        player_name = player_lookup.get(player_id, 'Unknown')
         
-        # Format time (seconds to readable format)
+        if run['run']['players']:
+            player_data = run['run']['players'][0]
+            if 'id' in player_data:
+                player_id = player_data['id']
+                player_name = player_lookup.get(player_id, 'Unknown')
+            elif 'name' in player_data:
+                player_name = player_data['name']
+            else:
+                player_name = 'Unknown'
+        else:
+            player_name = 'Unknown'
+        
         time_seconds = run['run']['times']['primary_t']
         time_formatted = format_time(time_seconds)
         
-        # Format date
         date = run['run']['date']
         
-        # Video link
-        video_link = run['run']['videos']['links'][0]['uri'] if run['run']['videos'] and run['run']['videos']['links'] else ''
+        video_link = ''
+        if run['run']['videos'] and run['run']['videos']['links']:
+            video_link = run['run']['videos']['links'][0]['uri']
         video_cell = f"[{video_link} Video]" if video_link else "No video"
         
         wikitext += f"""|-
@@ -67,7 +74,6 @@ def format_leaderboard_wikitext(data):
     return wikitext
 
 def format_time(seconds):
-    """Convert seconds to H:MM:SS or MM:SS format"""
     hours = int(seconds // 3600)
     minutes = int((seconds % 3600) // 60)
     secs = int(seconds % 60)
@@ -78,10 +84,8 @@ def format_time(seconds):
         return f"{minutes}:{secs:02d}"
 
 def login_to_wiki():
-    """Login to MediaWiki and get session token"""
     session = requests.Session()
     
-    # Get login token
     login_token_params = {
         'action': 'query',
         'meta': 'tokens',
@@ -92,7 +96,6 @@ def login_to_wiki():
     response = session.get(WIKI_API_URL, params=login_token_params)
     login_token = response.json()['query']['tokens']['logintoken']
     
-    # Login
     login_params = {
         'action': 'login',
         'lgname': WIKI_USERNAME,
@@ -108,8 +111,6 @@ def login_to_wiki():
     return session
 
 def update_wiki_page(session, title, content):
-    """Update a MediaWiki page with new content"""
-    # Get edit token
     edit_token_params = {
         'action': 'query',
         'meta': 'tokens',
@@ -119,7 +120,6 @@ def update_wiki_page(session, title, content):
     response = session.get(WIKI_API_URL, params=edit_token_params)
     edit_token = response.json()['query']['tokens']['csrftoken']
     
-    # Edit page
     edit_params = {
         'action': 'edit',
         'title': title,
@@ -139,10 +139,8 @@ def update_wiki_page(session, title, content):
         sys.exit(1)
 
 def main():
-    """Main execution function"""
     print("Starting speedrun leaderboard update...")
     
-    # Validate environment variables
     required_vars = ['WIKI_USERNAME', 'WIKI_PASSWORD', 'GAME_ID', 'CATEGORY_ID']
     missing_vars = [var for var in required_vars if not os.environ.get(var)]
     
@@ -150,16 +148,13 @@ def main():
         print(f"Missing required environment variables: {missing_vars}")
         sys.exit(1)
     
-    # Fetch speedrun data
     speedrun_data = get_speedrun_data()
     if not speedrun_data:
         print("Failed to fetch speedrun data")
         sys.exit(1)
     
-    # Format as wikitext
     wikitext = format_leaderboard_wikitext(speedrun_data)
     
-    # Login to wiki
     try:
         session = login_to_wiki()
         print("Successfully logged into wiki")
@@ -167,7 +162,6 @@ def main():
         print(f"Failed to login to wiki: {e}")
         sys.exit(1)
     
-    # Update wiki page
     update_wiki_page(session, WIKI_PAGE_TITLE, wikitext)
     print("Speedrun leaderboard update completed!")
 
