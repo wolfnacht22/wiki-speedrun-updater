@@ -11,7 +11,7 @@ CATEGORY_ID = os.environ.get('CATEGORY_ID')
 WIKI_PAGE_TITLE = os.environ.get('WIKI_PAGE_TITLE', 'Speedrun_Leaderboards')
 
 def get_speedrun_data():
-    url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{CATEGORY_ID}"
+    url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{CATEGORY_ID}?embed=players"
     
     try:
         response = requests.get(url, timeout=30)
@@ -30,9 +30,10 @@ def format_leaderboard_wikitext(data):
     player_lookup = {}
     if 'players' in data['data'] and 'data' in data['data']['players']:
         players = data['data']['players']['data']
-        player_lookup = {player['id']: player['names']['international'] for player in players}
+        for player in players:
+            player_lookup[player['id']] = player['names']['international']
     
-    wikitext = """❗ NOTE: Due to CORS restrictions, the proper API cannot be utilized. As a result, entries on this page must be updated manually. For the most up-to-date information on speedrun times, please visit [https://www.speedrun.com/Abyssus_ speedrun.com].<br>
+    wikitext = """❗ NOTE: Speedrun data is now automatically updated every 6 hours from [https://www.speedrun.com/Abyssus_ speedrun.com].<br>
 [[File:Discord_Icon.png|20x20px|link=https://discord.gg/z9KA7jSyFv]] Visit the official Abyssus Speedrunning Discord here: [https://discord.gg/z9KA7jSyFv Abyssus Speedrunning].
 
 ''Last updated: """ + datetime.utcnow().strftime('%m-%d') + """''
@@ -56,6 +57,7 @@ def format_leaderboard_wikitext(data):
     for i, run in enumerate(runs[:10]):
         rank = i + 1
         
+        player_name = "Unknown"
         if run['run']['players']:
             player_data = run['run']['players'][0]
             if 'id' in player_data:
@@ -63,22 +65,18 @@ def format_leaderboard_wikitext(data):
                 player_name = player_lookup.get(player_id, 'Unknown')
             elif 'name' in player_data:
                 player_name = player_data['name']
-            else:
-                player_name = 'Unknown'
-        else:
-            player_name = 'Unknown'
         
         igt_seconds = run['run']['times']['ingame_t'] if 'ingame_t' in run['run']['times'] and run['run']['times']['ingame_t'] else run['run']['times']['primary_t']
-        time_seconds = run['run']['times']['primary_t']
+        time_seconds = run['run']['times']['realtime_t'] if 'realtime_t' in run['run']['times'] and run['run']['times']['realtime_t'] else run['run']['times']['primary_t']
         igt_formatted = format_time_short(igt_seconds)
         time_formatted = format_time_short(time_seconds)
         
         date_formatted = run['run']['date'][5:]
         
-        video_link = ''
+        video_cell = ""
         if run['run']['videos'] and run['run']['videos']['links']:
             video_link = run['run']['videos']['links'][0]['uri']
-        video_cell = f"[{video_link} Video]" if video_link else ""
+            video_cell = f"[{video_link} Video]"
         
         bg_color = "#1A1A1A" if rank % 2 == 1 else "#2C3539"
         
