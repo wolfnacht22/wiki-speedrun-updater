@@ -85,12 +85,22 @@ def format_leaderboard_section(data, title, header_text):
         
         player_name = "Unknown"
         if run['run']['players']:
-            player_data = run['run']['players'][0]
-            if 'id' in player_data:
-                player_id = player_data['id']
-                player_name = player_lookup.get(player_id, 'Unknown')
-            elif 'name' in player_data:
-                player_name = player_data['name']
+            player_names = []
+            for player_data in run['run']['players']:
+                if 'id' in player_data:
+                    player_id = player_data['id']
+                    name = player_lookup.get(player_id, 'Unknown')
+                    player_names.append(name)
+                elif 'name' in player_data:
+                    player_names.append(player_data['name'])
+                else:
+                    player_names.append('Unknown')
+            
+            # Join player names with {{*}} for duo runs
+            if len(player_names) > 1:
+                player_name = ' {{*}} '.join(player_names)
+            elif len(player_names) == 1:
+                player_name = player_names[0]
         
         igt_seconds = run['run']['times']['ingame_t'] if 'ingame_t' in run['run']['times'] and run['run']['times']['ingame_t'] else run['run']['times']['primary_t']
         time_seconds = run['run']['times']['realtime_t'] if 'realtime_t' in run['run']['times'] and run['run']['times']['realtime_t'] else run['run']['times']['primary_t']
