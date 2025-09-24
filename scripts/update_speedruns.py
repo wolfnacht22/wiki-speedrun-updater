@@ -11,7 +11,7 @@ CATEGORY_ID = os.environ.get('CATEGORY_ID')
 WIKI_PAGE_TITLE = os.environ.get('WIKI_PAGE_TITLE', 'Speedrun_Leaderboards')
 
 def get_speedrun_data():
-    url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{CATEGORY_ID}?embed=players"
+    url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{CATEGORY_ID}?var-wl3vge98=192y4myq&var-ylq40y7n=lr34w8ol&embed=players"
     
     try:
         response = requests.get(url, timeout=30)
