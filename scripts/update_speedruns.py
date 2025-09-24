@@ -50,7 +50,21 @@ def format_leaderboard_section(data, title, header_text):
     if 'players' in data['data'] and 'data' in data['data']['players']:
         players = data['data']['players']['data']
         for player in players:
-            player_lookup[player['id']] = player['names']['international']
+            try:
+                # Try different possible structures for player names
+                if 'names' in player and 'international' in player['names']:
+                    player_lookup[player['id']] = player['names']['international']
+                elif 'name' in player:
+                    player_lookup[player['id']] = player['name']
+                elif 'names' in player and isinstance(player['names'], str):
+                    player_lookup[player['id']] = player['names']
+                else:
+                    # Debug: print the player structure to understand the format
+                    print(f"Unknown player structure: {player}")
+                    player_lookup[player['id']] = f"Player_{player['id'][:8]}"
+            except (KeyError, TypeError) as e:
+                print(f"Error processing player {player.get('id', 'unknown')}: {e}")
+                player_lookup[player.get('id', 'unknown')] = 'Unknown Player'
     
     section = f"""<div style="flex: 1; min-width: 300px;">
 === {title} ===
