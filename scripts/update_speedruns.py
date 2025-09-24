@@ -133,7 +133,7 @@ def format_leaderboard_wikitext(solo_data, bosses_data, duo_data):
     wikitext = """❗ NOTE: Speedrun data is automatically updated every 6 hours from [https://www.speedrun.com/Abyssus_ speedrun.com].<br>
 [[File:Discord_Icon.png|20x20px|link=https://discord.gg/z9KA7jSyFv]] Visit the official Abyssus Speedrunning Discord here: [https://discord.gg/z9KA7jSyFv Abyssus Speedrunning].
 
-''Last updated: """ + datetime.utcnow().strftime('%m-%d') + """''
+''Last updated: """ + datetime.utcnow().strftime('%m-%d %H:%M') + """ UTC''
 
 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
 
