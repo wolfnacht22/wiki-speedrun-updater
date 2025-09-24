@@ -32,7 +32,7 @@ jobs:
         WIKI_USERNAME: ${{ secrets.WIKI_USERNAME }}
         WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
         GAME_ID: ${{ secrets.GAME_ID }}
-        CATEGORY_ID: ${{ secrets.CATEGORY_IDS }}
+        CATEGORY_IDS: ${{ secrets.CATEGORY_IDS }}
         WIKI_PAGE_TITLE: ${{ secrets.WIKI_PAGE_TITLE }}
       run: |
         cd scripts
