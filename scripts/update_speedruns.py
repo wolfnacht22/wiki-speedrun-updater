@@ -7,43 +7,55 @@ WIKI_API_URL = os.environ.get('WIKI_API_URL', 'https://your-wiki.wiki.gg/api.php
 WIKI_USERNAME = os.environ.get('WIKI_USERNAME')
 WIKI_PASSWORD = os.environ.get('WIKI_PASSWORD')
 GAME_ID = os.environ.get('GAME_ID')
-CATEGORY_ID = os.environ.get('CATEGORY_ID')
+CATEGORY_IDS = os.environ.get('CATEGORY_IDS')
 WIKI_PAGE_TITLE = os.environ.get('WIKI_PAGE_TITLE', 'Speedrun_Leaderboards')
 
-def get_speedrun_data():
-    url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{CATEGORY_ID}?var-wl3vge98=192y4myq&var-ylq40y7n=lr34w8ol&embed=players"
+def get_speedrun_data(category_id, subcategories):
+    url = f"https://www.speedrun.com/api/v1/leaderboards/{GAME_ID}/category/{category_id}?{subcategories}&embed=players"
     
     try:
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         return response.json()
     except requests.RequestException as e:
-        print(f"Error fetching speedrun data: {e}")
+        print(f"Error fetching speedrun data for {category_id}: {e}")
         return None
 
-def format_leaderboard_wikitext(data):
+def format_leaderboard_section(data, title, header_text):
     if not data or 'data' not in data:
-        return "{{notice|Error loading speedrun data}}"
+        return f"""<div style="flex: 1; min-width: 300px;">
+=== {title} ===
+{{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
+! style="background-color:#059669; color:white; text-align:center;" colspan="6" | {header_text}
+|-
+! style="background-color:#2C3539; color:white; width:8%;" | #
+! style="background-color:#2C3539; color:white; width:35%;" | Player
+! style="background-color:#2C3539; color:white; width:15%;" | IGT
+! style="background-color:#2C3539; color:white; width:15%;" | Time
+! style="background-color:#2C3539; color:white; width:12%;" | Date
+! style="background-color:#2C3539; color:white; width:15%;" | Video
+|-
+| style="background-color:#1A1A1A; color:white; text-align:center; font-weight:bold;" | 1
+| style="background-color:#1A1A1A; color:white; font-weight:bold;" | No data available
+| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
+| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
+| style="background-color:#1A1A1A; color:white;" | --
+| style="background-color:#1A1A1A; color:white;" | 
+|-
+|}}
+</div>"""
     
     runs = data['data']['runs']
-    
     player_lookup = {}
     if 'players' in data['data'] and 'data' in data['data']['players']:
         players = data['data']['players']['data']
         for player in players:
             player_lookup[player['id']] = player['names']['international']
     
-    wikitext = """❗ NOTE: Speedrun data is automatically updated every 6 hours from [https://www.speedrun.com/Abyssus_ speedrun.com].<br>
-[[File:Discord_Icon.png|20x20px|link=https://discord.gg/z9KA7jSyFv]] Visit the official Abyssus Speedrunning Discord here: [https://discord.gg/z9KA7jSyFv Abyssus Speedrunning].
-
-''Last updated: """ + datetime.utcnow().strftime('%m-%d') + """''
-
-<div style="display: flex; gap: 10px; flex-wrap: wrap;">
-
-<div style="flex: 1; min-width: 300px;">
-=== Solo DW 0 ===
-{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
-! style="background-color:#059669; color:white; text-align:center;" colspan="6" | Solo | DW 0
+    section = f"""<div style="flex: 1; min-width: 300px;">
+=== {title} ===
+{{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
+! style="background-color:#059669; color:white; text-align:center;" colspan="6" | {header_text}
 |-
 ! style="background-color:#2C3539; color:white; width:8%;" | #
 ! style="background-color:#2C3539; color:white; width:35%;" | Player
@@ -80,7 +92,7 @@ def format_leaderboard_wikitext(data):
         
         bg_color = "#1A1A1A" if rank % 2 == 1 else "#2C3539"
         
-        wikitext += f"""|-
+        section += f"""|-
 | style="background-color:{bg_color}; color:white; text-align:center; font-weight:bold;" | {rank}
 | style="background-color:{bg_color}; color:white; font-weight:bold;" | {player_name}
 | style="background-color:{bg_color}; color:white; font-family:monospace;" | {igt_formatted}
@@ -89,52 +101,27 @@ def format_leaderboard_wikitext(data):
 | style="background-color:{bg_color}; color:white;" | {video_cell}
 """
     
-    wikitext += """|}
-</div>
+    section += """|}
+</div>"""
+    return section
 
-<div style="flex: 1; min-width: 300px;">
-=== Solo All Bosses DW 0 ===
-{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
-! style="background-color:#059669; color:white; text-align:center;" colspan="6" | Solo | All Bosses | DW 0
-|-
-! style="background-color:#2C3539; color:white; width:8%;" | #
-! style="background-color:#2C3539; color:white; width:35%;" | Player
-! style="background-color:#2C3539; color:white; width:15%;" | IGT
-! style="background-color:#2C3539; color:white; width:15%;" | Time
-! style="background-color:#2C3539; color:white; width:12%;" | Date
-! style="background-color:#2C3539; color:white; width:15%;" | Video
-|-
-| style="background-color:#1A1A1A; color:white; text-align:center; font-weight:bold;" | 1
-| style="background-color:#1A1A1A; color:white; font-weight:bold;" | Placeholder
-| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
-| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
-| style="background-color:#1A1A1A; color:white;" | --
-| style="background-color:#1A1A1A; color:white;" | 
-|-
-|}
-</div>
+def format_leaderboard_wikitext(solo_data, bosses_data, duo_data):
+    wikitext = """❗ NOTE: Speedrun data is automatically updated every 6 hours from [https://www.speedrun.com/Abyssus_ speedrun.com].<br>
+[[File:Discord_Icon.png|20x20px|link=https://discord.gg/z9KA7jSyFv]] Visit the official Abyssus Speedrunning Discord here: [https://discord.gg/z9KA7jSyFv Abyssus Speedrunning].
 
-<div style="flex: 1; min-width: 300px;">
-=== Duo DW 0 ===
-{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
-! style="background-color:#059669; color:white; text-align:center;" colspan="6" | Duo | DW 0
-|-
-! style="background-color:#2C3539; color:white; width:8%;" | #
-! style="background-color:#2C3539; color:white; width:35%;" | Player
-! style="background-color:#2C3539; color:white; width:15%;" | IGT
-! style="background-color:#2C3539; color:white; width:15%;" | Time
-! style="background-color:#2C3539; color:white; width:12%;" | Date
-! style="background-color:#2C3539; color:white; width:15%;" | Video
-|-
-| style="background-color:#1A1A1A; color:white; text-align:center; font-weight:bold;" | 1
-| style="background-color:#1A1A1A; color:white; font-weight:bold;" | Placeholder
-| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
-| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
-| style="background-color:#1A1A1A; color:white;" | --
-| style="background-color:#1A1A1A; color:white;" | 
-|-
-|}
-</div>
+''Last updated: """ + datetime.utcnow().strftime('%m-%d') + """''
+
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+
+"""
+    
+    wikitext += format_leaderboard_section(solo_data, "Solo DW 0", "Solo | DW 0")
+    wikitext += "\n"
+    wikitext += format_leaderboard_section(bosses_data, "Solo All Bosses DW 0", "Solo | All Bosses | DW 0") 
+    wikitext += "\n"
+    wikitext += format_leaderboard_section(duo_data, "Duo DW 0", "Duo | DW 0")
+    
+    wikitext += """
 
 </div>
 
@@ -204,19 +191,25 @@ def update_wiki_page(session, title, content):
 def main():
     print("Starting speedrun leaderboard update...")
     
-    required_vars = ['WIKI_USERNAME', 'WIKI_PASSWORD', 'GAME_ID', 'CATEGORY_ID']
+    required_vars = ['WIKI_USERNAME', 'WIKI_PASSWORD', 'GAME_ID', 'CATEGORY_IDS']
     missing_vars = [var for var in required_vars if not os.environ.get(var)]
     
     if missing_vars:
         print(f"Missing required environment variables: {missing_vars}")
         sys.exit(1)
     
-    speedrun_data = get_speedrun_data()
-    if not speedrun_data:
-        print("Failed to fetch speedrun data")
+    # Parse category IDs and subcategories
+    category_configs = CATEGORY_IDS.split(';')
+    if len(category_configs) != 3:
+        print("CATEGORY_IDS must contain exactly 3 category configurations separated by ';'")
         sys.exit(1)
     
-    wikitext = format_leaderboard_wikitext(speedrun_data)
+    # Fetch data for all three categories
+    solo_data = get_speedrun_data("mke0v8xd", "var-wl3vge98=192y4myq&var-ylq40y7n=lr34w8ol")
+    bosses_data = get_speedrun_data("jdr59zgk", "var-9l7g49pl=q65r4n7l&var-ylq40y7n=lr34w8ol")
+    duo_data = get_speedrun_data("5dwl9vn2", "var-j84p3vj8=lr34zpol&var-ylq40y7n=lr34w8ol")
+    
+    wikitext = format_leaderboard_wikitext(solo_data, bosses_data, duo_data)
     
     try:
         session = login_to_wiki()
