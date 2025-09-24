@@ -1,5 +1,4 @@
 name: Update Speedrun Leaderboards
-
 # Run every 6 hours
 on:
   schedule:
