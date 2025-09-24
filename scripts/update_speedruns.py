@@ -32,12 +32,24 @@ def format_leaderboard_wikitext(data):
         players = data['data']['players']['data']
         player_lookup = {player['id']: player['names']['international'] for player in players}
     
-    wikitext = """{{DISPLAYTITLE:Speedrun Leaderboards}}
-== Current Leaderboards ==
-''Last updated: """ + datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC') + """''
+    wikitext = """❗ NOTE: Due to CORS restrictions, the proper API cannot be utilized. As a result, entries on this page must be updated manually. For the most up-to-date information on speedrun times, please visit [https://www.speedrun.com/Abyssus_ speedrun.com].<br>
+[[File:Discord_Icon.png|20x20px|link=https://discord.gg/z9KA7jSyFv]] Visit the official Abyssus Speedrunning Discord here: [https://discord.gg/z9KA7jSyFv Abyssus Speedrunning].
 
-{| class="wikitable sortable"
-! Rank !! Player !! Time !! Date !! Video
+''Last updated: """ + datetime.utcnow().strftime('%m-%d') + """''
+
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+
+<div style="flex: 1; min-width: 300px;">
+=== Solo DW 0 ===
+{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
+! style="background-color:#059669; color:white; text-align:center;" colspan="6" | Solo | DW 0
+|-
+! style="background-color:#2C3539; color:white; width:8%;" | #
+! style="background-color:#2C3539; color:white; width:35%;" | Player
+! style="background-color:#2C3539; color:white; width:15%;" | IGT
+! style="background-color:#2C3539; color:white; width:15%;" | Time
+! style="background-color:#2C3539; color:white; width:12%;" | Date
+! style="background-color:#2C3539; color:white; width:15%;" | Video
 |-
 """
     
@@ -56,32 +68,85 @@ def format_leaderboard_wikitext(data):
         else:
             player_name = 'Unknown'
         
+        igt_seconds = run['run']['times']['ingame_t'] if 'ingame_t' in run['run']['times'] and run['run']['times']['ingame_t'] else run['run']['times']['primary_t']
         time_seconds = run['run']['times']['primary_t']
-        time_formatted = format_time(time_seconds)
+        igt_formatted = format_time_short(igt_seconds)
+        time_formatted = format_time_short(time_seconds)
         
-        date = run['run']['date']
+        date_formatted = run['run']['date'][5:]
         
         video_link = ''
         if run['run']['videos'] and run['run']['videos']['links']:
             video_link = run['run']['videos']['links'][0]['uri']
-        video_cell = f"[{video_link} Video]" if video_link else "No video"
+        video_cell = f"[{video_link} Video]" if video_link else ""
+        
+        bg_color = "#1A1A1A" if rank % 2 == 1 else "#2C3539"
         
         wikitext += f"""|-
-| {rank} || {player_name} || {time_formatted} || {date} || {video_cell}
+| style="background-color:{bg_color}; color:white; text-align:center; font-weight:bold;" | {rank}
+| style="background-color:{bg_color}; color:white; font-weight:bold;" | {player_name}
+| style="background-color:{bg_color}; color:white; font-family:monospace;" | {igt_formatted}
+| style="background-color:{bg_color}; color:white; font-family:monospace;" | {time_formatted}
+| style="background-color:{bg_color}; color:white;" | {date_formatted}
+| style="background-color:{bg_color}; color:white;" | {video_cell}
 """
     
-    wikitext += "|}\n\n[[Category:Speedrunning]]"
+    wikitext += """|}
+</div>
+
+<div style="flex: 1; min-width: 300px;">
+=== Solo All Bosses DW 0 ===
+{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
+! style="background-color:#059669; color:white; text-align:center;" colspan="6" | Solo | All Bosses | DW 0
+|-
+! style="background-color:#2C3539; color:white; width:8%;" | #
+! style="background-color:#2C3539; color:white; width:35%;" | Player
+! style="background-color:#2C3539; color:white; width:15%;" | IGT
+! style="background-color:#2C3539; color:white; width:15%;" | Time
+! style="background-color:#2C3539; color:white; width:12%;" | Date
+! style="background-color:#2C3539; color:white; width:15%;" | Video
+|-
+| style="background-color:#1A1A1A; color:white; text-align:center; font-weight:bold;" | 1
+| style="background-color:#1A1A1A; color:white; font-weight:bold;" | Placeholder
+| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
+| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
+| style="background-color:#1A1A1A; color:white;" | --
+| style="background-color:#1A1A1A; color:white;" | 
+|-
+|}
+</div>
+
+<div style="flex: 1; min-width: 300px;">
+=== Duo DW 0 ===
+{| class="wikitable" style="width:100%; background-color:#1A1A1A;"
+! style="background-color:#059669; color:white; text-align:center;" colspan="6" | Duo | DW 0
+|-
+! style="background-color:#2C3539; color:white; width:8%;" | #
+! style="background-color:#2C3539; color:white; width:35%;" | Player
+! style="background-color:#2C3539; color:white; width:15%;" | IGT
+! style="background-color:#2C3539; color:white; width:15%;" | Time
+! style="background-color:#2C3539; color:white; width:12%;" | Date
+! style="background-color:#2C3539; color:white; width:15%;" | Video
+|-
+| style="background-color:#1A1A1A; color:white; text-align:center; font-weight:bold;" | 1
+| style="background-color:#1A1A1A; color:white; font-weight:bold;" | Placeholder
+| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
+| style="background-color:#1A1A1A; color:white; font-family:monospace;" | --
+| style="background-color:#1A1A1A; color:white;" | --
+| style="background-color:#1A1A1A; color:white;" | 
+|-
+|}
+</div>
+
+</div>
+
+[[Category:Speedrunning]]"""
     return wikitext
 
-def format_time(seconds):
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
+def format_time_short(seconds):
+    minutes = int(seconds // 60)
     secs = int(seconds % 60)
-    
-    if hours > 0:
-        return f"{hours}:{minutes:02d}:{secs:02d}"
-    else:
-        return f"{minutes}:{secs:02d}"
+    return f"{minutes}m {secs:02d}s"
 
 def login_to_wiki():
     session = requests.Session()
